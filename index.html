@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>📅 Еженедельник</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>📅 Еженедельник</h1>
+            <div class="stats">
+                <div class="stats-bar">
+                    <div class="stats-fill" id="stats-fill"></div>
+                </div>
+                <span id="stats-text">0/0</span>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-view="tasks">📋 Задачи</button>
+            <button class="nav-tab" data-view="repeats">🔄 Повторы</button>
+        </nav>
+
+        <div class="view active" id="view-tasks">
+            <div class="tabs" id="tabs">
+                <button class="tab" data-day="0">Пн</button>
+                <button class="tab" data-day="1">Вт</button>
+                <button class="tab" data-day="2">Ср</button>
+                <button class="tab" data-day="3">Чт</button>
+                <button class="tab" data-day="4">Пт</button>
+                <button class="tab" data-day="5">Сб</button>
+                <button class="tab" data-day="6">Вс</button>
+            </div>
+
+            <div class="day-header">
+                <h2 id="day-title">Понедельник</h2>
+                <button class="btn-icon" id="btn-clear-day">🗑</button>
+            </div>
+
+            <div class="tasks-container">
+                <div class="tasks-list" id="tasks-list"></div>
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>Задач нет</p>
+                    <span>Нажмите + чтобы добавить</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="view" id="view-repeats">
+            <div class="section-header">
+                <h2>🔄 Повторяющиеся задачи</h2>
+            </div>
+            <div class="repeats-container">
+                <div class="repeats-list" id="repeats-list"></div>
+                <div class="empty-state" id="empty-repeats">
+                    <div class="empty-icon">🔄</div>
+                    <p>Нет повторов</p>
+                    <span>Создайте шаблон</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="fab" id="btn-add">+</button>
+    </div>
+
+    <!-- Модалки -->
+    <div class="modal" id="modal-add">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Новая задача</h3>
+                <button class="modal-close" data-modal="modal-add">&times;</button>
+            </div>
+            <form id="form-add-task">
+                <div class="form-group">
+                    <label>Задача</label>
+                    <input type="text" id="task-text" placeholder="Что нужно сделать?" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Время</label>
+                    <input type="time" id="task-time">
+                </div>
+                <div class="form-group">
+                    <label>Приоритет</label>
+                    <div class="priority-select" id="priority-select">
+                        <button type="button" class="priority-btn active" data-priority="0">⚪</button>
+                        <button type="button" class="priority-btn" data-priority="1">🟢</button>
+                        <button type="button" class="priority-btn" data-priority="2">🟡</button>
+                        <button type="button" class="priority-btn" data-priority="3">🔴</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">➕ Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-repeat">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>🔄 Повторяющаяся задача</h3>
+                <button class="modal-close" data-modal="modal-repeat">&times;</button>
+            </div>
+            <form id="form-add-repeat">
+                <div class="form-group">
+                    <label>Задача</label>
+                    <input type="text" id="repeat-text" placeholder="Что нужно делать?" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Время</label>
+                    <input type="time" id="repeat-time">
+                </div>
+                <div class="form-group">
+                    <label>Приоритет</label>
+                    <div class="priority-select" id="repeat-priority-select">
+                        <button type="button" class="priority-btn active" data-priority="0">⚪</button>
+                        <button type="button" class="priority-btn" data-priority="1">🟢</button>
+                        <button type="button" class="priority-btn" data-priority="2">🟡</button>
+                        <button type="button" class="priority-btn" data-priority="3">🔴</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Повторять</label>
+                    <div class="repeat-type-select" id="repeat-type-select">
+                        <button type="button" class="repeat-type-btn active" data-type="daily">Ежедневно</button>
+                        <button type="button" class="repeat-type-btn" data-type="weekdays">Будни</button>
+                        <button type="button" class="repeat-type-btn" data-type="weekends">Выходные</button>
+                        <button type="button" class="repeat-type-btn" data-type="weekly">Выбрать</button>
+                    </div>
+                </div>
+                <div class="form-group" id="days-select-group" style="display:none">
+                    <label>Дни недели</label>
+                    <div class="days-select" id="days-select">
+                        <button type="button" class="day-btn" data-day="0">Пн</button>
+                        <button type="button" class="day-btn" data-day="1">Вт</button>
+                        <button type="button" class="day-btn" data-day="2">Ср</button>
+                        <button type="button" class="day-btn" data-day="3">Чт</button>
+                        <button type="button" class="day-btn" data-day="4">Пт</button>
+                        <button type="button" class="day-btn" data-day="5">Сб</button>
+                        <button type="button" class="day-btn" data-day="6">Вс</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">🔄 Создать</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-confirm">
+        <div class="modal-content modal-small">
+            <p id="confirm-text">Вы уверены?</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" data-modal="modal-confirm">Отмена</button>
+                <button class="btn-danger" id="btn-confirm-ok">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-priority">
+        <div class="modal-content modal-small">
+            <h3>Изменить приоритет</h3>
+            <div class="priority-select-large" id="priority-change">
+                <button class="priority-option" data-priority="0">⚪ Без приоритета</button>
+                <button class="priority-option" data-priority="1">🟢 Низкий</button>
+                <button class="priority-option" data-priority="2">🟡 Средний</button>
+                <button class="priority-option" data-priority="3">🔴 Высокий</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

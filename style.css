@@ -1,0 +1,687 @@
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --hint: #999999;
+    --accent: #2481cc;
+    --secondary: #f0f0f0;
+    --success: #34c759;
+    --warning: #ff9500;
+    --danger: #ff3b30;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    --radius: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 80px;
+}
+
+/* ========== HEADER ========== */
+.header {
+    background: linear-gradient(135deg, var(--accent), #1a6bb5);
+    color: white;
+    padding: 16px;
+    text-align: center;
+}
+
+.header h1 { font-size: 20px; margin-bottom: 10px; }
+
+.stats { display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+.stats-bar {
+    width: 100px;
+    height: 6px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stats-fill { height: 100%; background: white; transition: width 0.3s; }
+
+/* ========== NAVIGATION TABS ========== */
+.nav-tabs { display: flex; background: var(--secondary); padding: 6px; gap: 4px; }
+
+.nav-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--hint);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nav-tab:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.nav-tab.active {
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: var(--shadow);
+}
+
+/* ========== VIEWS ========== */
+.view { display: none; flex-direction: column; flex: 1; }
+.view.active { display: flex; }
+
+/* ========== DAY TABS (ИСПРАВЛЕНО!) ========== */
+.tabs {
+    display: flex;
+    padding: 10px;
+    gap: 6px;
+    background: var(--secondary);
+}
+
+.tab {
+    flex: 1;
+    padding: 12px 4px;
+    border: 2px solid transparent;
+    background: var(--bg);
+    color: var(--hint);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tab:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* АКТИВНЫЙ ДЕНЬ - ЯРКОЕ ВЫДЕЛЕНИЕ */
+.tab.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(36, 129, 204, 0.4);
+    transform: scale(1.02);
+}
+
+/* Точка для дней с задачами */
+.tab.has-tasks::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+.tab.active.has-tasks::after {
+    background: white;
+    border-color: var(--accent);
+}
+
+/* ========== DAY HEADER ========== */
+.day-header, .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--secondary);
+    background: var(--bg);
+}
+
+.day-header h2, .section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--secondary);
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: var(--danger);
+    transform: scale(1.1);
+}
+
+/* ========== TASKS CONTAINER ========== */
+.tasks-container, .repeats-container {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.tasks-list, .repeats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ========== TASK CARD (УЛУЧШЕНО!) ========== */
+.task-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    padding-left: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: relative;
+    animation: slideIn 0.2s ease;
+    border: 1px solid var(--secondary);
+    transition: all 0.2s;
+}
+
+.task-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    transform: translateY(-1px);
+}
+
+/* Цветная полоска приоритета - ТОЛЩЕ И ЯРЧЕ */
+.task-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    border-radius: 4px 0 0 4px;
+    background: var(--secondary);
+}
+
+.task-card[data-priority="1"]::before { background: var(--success); }
+.task-card[data-priority="2"]::before { background: var(--warning); }
+.task-card[data-priority="3"]::before { background: var(--danger); }
+
+.task-card.done {
+    opacity: 0.6;
+    background: var(--secondary);
+}
+.task-card.done .task-text { text-decoration: line-through; }
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ========== CHECKBOX ========== */
+.task-checkbox {
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--hint);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.task-checkbox:hover {
+    border-color: var(--success);
+    transform: scale(1.1);
+}
+
+.task-checkbox.checked {
+    background: var(--success);
+    border-color: var(--success);
+}
+
+.task-checkbox.checked::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* ========== TASK CONTENT ========== */
+.task-content { flex: 1; min-width: 0; }
+
+/* META - ВРЕМЯ И ПРИОРИТЕТ (УЛУЧШЕНО!) */
+.task-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+/* ВРЕМЯ - ЯРКИЙ БЕЙДЖ */
+.task-time {
+    font-size: 12px;
+    color: white;
+    background: var(--accent);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* ПРИОРИТЕТ - КРУПНЕЕ */
+.task-priority {
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    line-height: 1;
+}
+
+.task-priority:hover {
+    transform: scale(1.3);
+}
+
+/* ПОВТОР - ЗАМЕТНЕЕ */
+.task-repeat {
+    font-size: 14px;
+    color: var(--accent);
+    background: rgba(36, 129, 204, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ТЕКСТ ЗАДАЧИ */
+.task-text {
+    font-size: 15px;
+    word-break: break-word;
+    line-height: 1.4;
+    color: var(--text);
+}
+
+/* КНОПКА УДАЛЕНИЯ */
+.task-delete {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: var(--hint);
+    font-size: 22px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-delete:hover {
+    background: var(--danger);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* ========== REPEAT CARD ========== */
+.repeat-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: relative;
+    border: 1px solid var(--secondary);
+}
+
+.repeat-card::before {
+    content: '🔄';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 16px;
+}
+
+.repeat-card.inactive { opacity: 0.5; }
+
+.repeat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.repeat-priority { font-size: 20px; }
+
+.repeat-text {
+    font-size: 16px;
+    font-weight: 600;
+    flex: 1;
+    color: var(--text);
+}
+
+.repeat-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.repeat-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: var(--secondary);
+    border-radius: 8px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.repeat-actions { display: flex; gap: 10px; }
+
+.repeat-actions button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.repeat-actions button:hover {
+    transform: scale(1.02);
+}
+
+.btn-toggle { background: var(--accent); color: white; }
+.btn-remove { background: var(--danger); color: white; }
+
+/* ========== EMPTY STATE ========== */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--hint);
+    display: none;
+}
+
+.empty-state.show { display: block; }
+
+.empty-icon { font-size: 50px; margin-bottom: 12px; }
+
+.empty-state p { font-size: 16px; margin-bottom: 6px; }
+
+/* ========== FAB ========== */
+.fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #1a6bb5);
+    color: white;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(36, 129, 204, 0.4);
+    z-index: 100;
+    transition: all 0.2s;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(36, 129, 204, 0.5);
+}
+
+/* ========== MODAL ========== */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+
+.modal.active { opacity: 1; visibility: visible; }
+
+.modal-content {
+    background: var(--bg);
+    width: 100%;
+    max-width: 420px;
+    border-radius: 16px 16px 0 0;
+    padding: 24px;
+    transform: translateY(100%);
+    transition: transform 0.3s;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal.active .modal-content { transform: translateY(0); }
+
+.modal-small {
+    border-radius: 16px;
+    margin: 20px;
+    text-align: center;
+}
+
+.modal-large { max-height: 85vh; }
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 { font-size: 18px; font-weight: 700; }
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--secondary);
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--hint);
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* ========== FORM ========== */
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--secondary);
+    border-radius: 10px;
+    font-size: 16px;
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ========== PRIORITY SELECT ========== */
+.priority-select, .repeat-type-select, .days-select {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.priority-btn {
+    flex: 1;
+    min-width: 55px;
+    padding: 12px;
+    border: 2px solid var(--secondary);
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.priority-btn:hover {
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.priority-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 2px 8px rgba(36, 129, 204, 0.3);
+}
+
+.priority-select-large {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.priority-option {
+    padding: 16px;
+    border: none;
+    background: var(--secondary);
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.priority-option:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* ========== REPEAT TYPE SELECT ========== */
+.repeat-type-btn {
+    padding: 10px 14px;
+    border: 2px solid var(--secondary);
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.repeat-type-btn:hover {
+    border-color: var(--accent);
+}
+
+.repeat-type-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+}
+
+/* ========== DAYS SELECT ========== */
+.day-btn {
+    flex: 1;
+    padding: 12px 4px;
+    border: 2px solid var(--secondary);
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.day-btn:hover {
+    border-color: var(--accent);
+}
+
+.day-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+}
+
+/* ========== SUBMIT BUTTON ========== */
+.btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #1a6bb5);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+}
+
+.btn-submit:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(36, 129, 204, 0.4);
+}
+
+/* ========== MODAL BUTTONS ========== */
+.modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
+
+.btn-cancel, .btn-danger {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background: var(--secondary);
+    color: var(--text);
+}
+
+.btn-cancel:hover {
+    background: #e0e0e0;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #e63329;
+}
+
+#confirm-text {
+    font-size: 17px;
+    padding: 10px 0;
+    font-weight: 500;
+}
