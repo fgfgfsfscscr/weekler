@@ -1,31 +1,22 @@
 (function() {
     'use strict';
 
-    // ========== TELEGRAM ==========
     var tg = window.Telegram && window.Telegram.WebApp;
-
+    
     if (tg) {
         tg.ready();
         tg.expand();
-
-        var root = document.documentElement;
-        var p = tg.themeParams;
-        if (p.bg_color) root.style.setProperty('--bg', p.bg_color);
-        if (p.text_color) root.style.setProperty('--text', p.text_color);
-        if (p.hint_color) root.style.setProperty('--hint', p.hint_color);
-        if (p.button_color) root.style.setProperty('--accent', p.button_color);
-        if (p.secondary_bg_color) root.style.setProperty('--secondary', p.secondary_bg_color);
     }
 
-    // ========== КОНСТАНТЫ ==========
     var DAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
     var DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var PRIORITY_EMOJI = {0: '⚪', 1: '🟢', 2: '🟡', 3: '🔴'};
     var REPEAT_LABELS = { daily: 'Ежедневно', weekdays: 'Будни', weekends: 'Выходные', weekly: 'Еженедельно' };
 
-    // ========== СОСТОЯНИЕ ==========
+    // Текущий день недели (0 = Понедельник, 6 = Воскресенье)
     var today = new Date().getDay();
     var currentDay = today === 0 ? 6 : today - 1;
+    
     var currentView = 'tasks';
     var selectedPriority = 0;
     var selectedRepeatPriority = 0;
@@ -34,7 +25,7 @@
     var confirmCallback = null;
     var priorityTaskId = null;
 
-    // ========== ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ==========
+    // ========== LOCALSTORAGE ==========
     function getStorageKey() {
         var now = new Date();
         var year = now.getFullYear();
@@ -51,25 +42,17 @@
     }
 
     function loadTasks() {
-        var key = getStorageKey();
-        var data = localStorage.getItem(key);
-        if (data) {
-            return JSON.parse(data);
-        }
-        return {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []};
+        var data = localStorage.getItem(getStorageKey());
+        return data ? JSON.parse(data) : {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []};
     }
 
     function saveTasks(tasks) {
-        var key = getStorageKey();
-        localStorage.setItem(key, JSON.stringify(tasks));
+        localStorage.setItem(getStorageKey(), JSON.stringify(tasks));
     }
 
     function loadRepeats() {
         var data = localStorage.getItem('weekly_repeats');
-        if (data) {
-            return JSON.parse(data);
-        }
-        return [];
+        return data ? JSON.parse(data) : [];
     }
 
     function saveRepeats(repeats) {
@@ -121,10 +104,7 @@
             }
         }
 
-        if (changed) {
-            saveTasks(tasks);
-        }
-
+        if (changed) saveTasks(tasks);
         return tasks;
     }
 
@@ -169,10 +149,9 @@
     function updatePriorityButtons(containerId, priority) {
         var btns = document.querySelectorAll('#' + containerId + ' .priority-btn');
         for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.remove('active');
             if (parseInt(btns[i].getAttribute('data-priority')) === priority) {
                 btns[i].classList.add('active');
-            } else {
-                btns[i].classList.remove('active');
             }
         }
     }
@@ -180,10 +159,9 @@
     function updateRepeatTypeButtons(type) {
         var btns = document.querySelectorAll('#repeat-type-select .repeat-type-btn');
         for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.remove('active');
             if (btns[i].getAttribute('data-type') === type) {
                 btns[i].classList.add('active');
-            } else {
-                btns[i].classList.remove('active');
             }
         }
         document.getElementById('days-select-group').style.display = type === 'weekly' ? 'block' : 'none';
@@ -192,11 +170,10 @@
     function updateDaysButtons(days) {
         var btns = document.querySelectorAll('#days-select .day-btn');
         for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.remove('active');
             var d = parseInt(btns[i].getAttribute('data-day'));
             if (days.indexOf(d) !== -1) {
                 btns[i].classList.add('active');
-            } else {
-                btns[i].classList.remove('active');
             }
         }
     }
@@ -218,29 +195,31 @@
         document.getElementById('stats-text').textContent = done + '/' + total;
     }
 
-function updateTabs() {
-    var tasks = loadTasks();
-    var tabs = document.querySelectorAll('.tab');
+    // ИСПРАВЛЕНО: обновление табов
+    function updateTabs() {
+        var tasks = loadTasks();
+        var tabs = document.querySelectorAll('.tabs .tab');
 
-    for (var i = 0; i < tabs.length; i++) {
-        var day = parseInt(tabs[i].getAttribute('data-day'));
-        var hasTasks = tasks[day] && tasks[day].length > 0;
+        for (var i = 0; i < tabs.length; i++) {
+            var tab = tabs[i];
+            var day = parseInt(tab.getAttribute('data-day'));
+            var hasTasks = tasks[day] && tasks[day].length > 0;
 
-        // Сначала убираем все классы
-        tabs[i].classList.remove('active');
-        tabs[i].classList.remove('has-tasks');
+            // Убираем все классы
+            tab.classList.remove('active');
+            tab.classList.remove('has-tasks');
 
-        // Добавляем active для текущего дня
-        if (day === currentDay) {
-            tabs[i].classList.add('active');
-        }
+            // Добавляем active только для currentDay
+            if (day === currentDay) {
+                tab.classList.add('active');
+            }
 
-        // Добавляем has-tasks если есть задачи
-        if (hasTasks) {
-            tabs[i].classList.add('has-tasks');
+            // Добавляем has-tasks если есть задачи
+            if (hasTasks) {
+                tab.classList.add('has-tasks');
+            }
         }
     }
-}
 
     function renderTasks() {
         var tasks = applyRepeats();
@@ -250,7 +229,7 @@ function updateTabs() {
 
         document.getElementById('day-title').textContent = DAYS[currentDay];
 
-        // Сортировка: приоритет (высокий первый), потом время
+        // Сортировка
         dayTasks.sort(function(a, b) {
             if (b.priority !== a.priority) return b.priority - a.priority;
             if (!a.time && !b.time) return 0;
@@ -262,29 +241,28 @@ function updateTabs() {
         if (dayTasks.length === 0) {
             list.innerHTML = '';
             empty.classList.add('show');
-            return;
-        }
+        } else {
+            empty.classList.remove('show');
 
-        empty.classList.remove('show');
-
-        var html = '';
-        for (var i = 0; i < dayTasks.length; i++) {
-            var t = dayTasks[i];
-            html += '<div class="task-card ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '" data-priority="' + t.priority + '">' +
-                '<div class="task-checkbox ' + (t.done ? 'checked' : '') + '" data-id="' + t.id + '"></div>' +
-                '<div class="task-content">' +
-                    '<div class="task-meta">' +
-                        (t.time ? '<span class="task-time">⏰ ' + t.time + '</span>' : '') +
-                        '<span class="task-priority" data-id="' + t.id + '">' + PRIORITY_EMOJI[t.priority] + '</span>' +
-                        (t.repeatId ? '<span class="task-repeat">🔄</span>' : '') +
+            var html = '';
+            for (var i = 0; i < dayTasks.length; i++) {
+                var t = dayTasks[i];
+                html += '<div class="task-card ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '" data-priority="' + t.priority + '">' +
+                    '<div class="task-checkbox ' + (t.done ? 'checked' : '') + '" data-id="' + t.id + '"></div>' +
+                    '<div class="task-content">' +
+                        '<div class="task-meta">' +
+                            (t.time ? '<span class="task-time">⏰ ' + t.time + '</span>' : '') +
+                            '<span class="task-priority" data-id="' + t.id + '">' + PRIORITY_EMOJI[t.priority] + '</span>' +
+                            (t.repeatId ? '<span class="task-repeat">🔄 повтор</span>' : '') +
+                        '</div>' +
+                        '<div class="task-text">' + escapeHtml(t.text) + '</div>' +
                     '</div>' +
-                    '<div class="task-text">' + escapeHtml(t.text) + '</div>' +
-                '</div>' +
-                '<button class="task-delete" data-id="' + t.id + '">×</button>' +
-            '</div>';
+                    '<button class="task-delete" data-id="' + t.id + '">×</button>' +
+                '</div>';
+            }
+            list.innerHTML = html;
         }
 
-        list.innerHTML = html;
         updateStats();
         updateTabs();
     }
@@ -306,7 +284,7 @@ function updateTabs() {
         for (var i = 0; i < repeats.length; i++) {
             var r = repeats[i];
             var schedule = REPEAT_LABELS[r.type] || '';
-
+            
             if (r.type === 'weekly' && r.days && r.days.length > 0) {
                 var names = [];
                 for (var j = 0; j < r.days.length; j++) {
@@ -457,7 +435,7 @@ function updateTabs() {
         renderTasks();
         renderRepeats();
 
-        // Навигация
+        // Навигация между видами
         var navTabs = document.querySelectorAll('.nav-tab');
         for (var i = 0; i < navTabs.length; i++) {
             navTabs[i].addEventListener('click', function() {
@@ -474,13 +452,14 @@ function updateTabs() {
             });
         }
 
-        // Дни
-        var dayTabs = document.querySelectorAll('.tab');
+        // ИСПРАВЛЕНО: выбор дня недели
+        var dayTabs = document.querySelectorAll('.tabs .tab');
         for (var i = 0; i < dayTabs.length; i++) {
             dayTabs[i].addEventListener('click', function() {
+                // Обновляем currentDay на выбранный
                 currentDay = parseInt(this.getAttribute('data-day'));
                 haptic('light');
-                renderTasks();
+                renderTasks(); // renderTasks вызывает updateTabs внутри
             });
         }
 
@@ -497,7 +476,8 @@ function updateTabs() {
         var closeBtns = document.querySelectorAll('.modal-close, .btn-cancel');
         for (var i = 0; i < closeBtns.length; i++) {
             closeBtns[i].addEventListener('click', function() {
-                closeModal(this.getAttribute('data-modal'));
+                var modal = this.getAttribute('data-modal');
+                if (modal) closeModal(modal);
             });
         }
 
