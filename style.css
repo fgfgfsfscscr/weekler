@@ -198,6 +198,7 @@ body {
     gap: 12px;
 }
 
+/* Task Card */
 .task-card {
     background: var(--bg-card);
     border-radius: var(--radius);
@@ -281,6 +282,10 @@ body {
     font-weight: 600;
 }
 
+.task-time.interval {
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+}
+
 .task-priority {
     font-size: 18px;
     cursor: pointer;
@@ -318,6 +323,7 @@ body {
     color: white;
 }
 
+/* Repeat Card */
 .repeat-card {
     background: var(--bg-card);
     border-radius: var(--radius);
@@ -379,6 +385,11 @@ body {
     font-weight: 600;
 }
 
+.repeat-badge.interval {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+    color: #a78bfa;
+}
+
 .repeat-days-preview {
     display: flex;
     gap: 4px;
@@ -429,6 +440,7 @@ body {
     color: white;
 }
 
+/* Empty State */
 .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -451,6 +463,7 @@ body {
     font-weight: 600;
 }
 
+/* FAB */
 .fab {
     position: fixed;
     bottom: 24px;
@@ -472,6 +485,7 @@ body {
     transform: scale(0.9);
 }
 
+/* Modal */
 .modal {
     position: fixed;
     inset: 0;
@@ -498,12 +512,16 @@ body {
     padding: 24px;
     transform: translateY(100%);
     transition: transform 0.3s;
-    max-height: 85vh;
+    max-height: 90vh;
     overflow-y: auto;
 }
 
 .modal.active .modal-content {
     transform: translateY(0);
+}
+
+.modal-large {
+    max-height: 95vh;
 }
 
 .modal-small {
@@ -534,6 +552,7 @@ body {
     color: var(--hint);
 }
 
+/* Form */
 .form-group {
     margin-bottom: 16px;
 }
@@ -547,7 +566,8 @@ body {
 }
 
 .form-group input[type="text"],
-.form-group input[type="time"] {
+.form-group input[type="time"],
+.form-group input[type="date"] {
     width: 100%;
     padding: 14px;
     border: 2px solid var(--border);
@@ -562,6 +582,82 @@ body {
     border-color: var(--accent);
 }
 
+/* Time Type Select */
+.time-type-select {
+    display: flex;
+    gap: 6px;
+}
+
+.time-type-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border: 2px solid var(--border);
+    background: var(--bg-card);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.time-type-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+}
+
+/* Time Row */
+.time-row {
+    display: flex;
+    gap: 12px;
+}
+
+.time-field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.time-field span {
+    color: var(--hint);
+    font-size: 14px;
+    min-width: 20px;
+}
+
+.time-field input {
+    flex: 1;
+}
+
+/* Calendar */
+.calendar-header {
+    padding: 16px;
+    background: var(--bg-secondary);
+}
+
+.date-picker {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.date-picker:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.date-picker::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+/* Priority & Select */
 .priority-select, .repeat-type-select, .days-select {
     display: flex;
     gap: 8px;
@@ -691,32 +787,7 @@ body {
     color: white;
 }
 
-.calendar-header {
-    padding: 16px;
-    background: var(--bg-secondary);
-}
-
-.date-picker {
-    width: 100%;
-    padding: 14px;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    font-size: 16px;
-    background: var(--bg-card);
-    color: var(--text);
-    cursor: pointer;
-}
-
-.date-picker:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-.date-picker::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-    cursor: pointer;
-}
-
+/* Toast */
 .toast {
     position: fixed;
     bottom: 100px;
@@ -738,10 +809,5 @@ body {
     opacity: 1;
 }
 
-.toast.success {
-    border-color: var(--success);
-}
-
-.toast.error {
-    border-color: var(--danger);
-}
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--danger); }
