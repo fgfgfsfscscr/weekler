@@ -7,11 +7,15 @@
         tg.expand(); 
     }
 
+    // ========== КОНСТАНТЫ ==========
     var DAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
     var DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var PRIORITY_EMOJI = {0: '⚪', 1: '🟢', 2: '🟡', 3: '🔴'};
     var REPEAT_LABELS = { daily: 'Ежедневно', weekdays: 'Будни', weekends: 'Выходные', weekly: 'По дням' };
+    var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
+    // ========== СОСТОЯНИЕ ==========
     var todayIndex = (function() {
         var d = new Date().getDay();
         return d === 0 ? 6 : d - 1;
@@ -19,15 +23,33 @@
     
     var currentDay = todayIndex;
     var currentView = 'tasks';
+    var selectedDate = formatDate(new Date());
     var selectedPriority = 0;
     var selectedRepeatPriority = 0;
+    var selectedCalendarPriority = 0;
     var selectedRepeatType = 'daily';
     var selectedDays = [];
     var confirmCallback = null;
     var priorityTaskId = null;
-    var deleteRepeatId = null;
+    var prioritySource = 'tasks'; // 'tasks' или 'calendar'
 
-    // ========== STORAGE ==========
+    // ========== УТИЛИТЫ ==========
+    
+    function formatDate(date) {
+        var d = new Date(date);
+        var year = d.getFullYear();
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+    }
+    
+    function formatDateRu(dateStr) {
+        var parts = dateStr.split('-');
+        var day = parseInt(parts[2]);
+        var month = parseInt(parts[1]) - 1;
+        var year = parts[0];
+        return day + ' ' + MONTHS[month] + ' ' + year;
+    }
     
     function getWeekId() {
         var now = new Date();
@@ -40,45 +62,74 @@
         return year + '_' + week;
     }
 
-    function getStorageKey() {
+    function generateId() {
+        return 'id_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // ========== ХРАНИЛИЩЕ: НЕДЕЛЬНЫЕ ЗАДАЧИ ==========
+    
+    function getWeekStorageKey() {
         return 'weekly_tasks_' + getWeekId();
     }
 
-    function loadTasks() {
+    function loadWeekTasks() {
         try {
-            var data = localStorage.getItem(getStorageKey());
+            var data = localStorage.getItem(getWeekStorageKey());
             var tasks = data ? JSON.parse(data) : null;
-            
             if (!tasks) {
                 tasks = {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []};
             }
-            
-            // Убедимся что все дни существуют
             for (var i = 0; i < 7; i++) {
                 if (!tasks[i]) tasks[i] = [];
             }
-            
             return tasks;
         } catch(e) {
-            console.error('Ошибка загрузки задач:', e);
             return {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []};
         }
     }
 
-    function saveTasks(tasks) {
+    function saveWeekTasks(tasks) {
         try {
-            localStorage.setItem(getStorageKey(), JSON.stringify(tasks));
+            localStorage.setItem(getWeekStorageKey(), JSON.stringify(tasks));
         } catch(e) {
             console.error('Ошибка сохранения:', e);
         }
     }
+
+    // ========== ХРАНИЛИЩЕ: ЗАДАЧИ ПО ДАТАМ ==========
+    
+    function getDateStorageKey(dateStr) {
+        return 'calendar_tasks_' + dateStr;
+    }
+
+    function loadDateTasks(dateStr) {
+        try {
+            var data = localStorage.getItem(getDateStorageKey(dateStr));
+            return data ? JSON.parse(data) : [];
+        } catch(e) {
+            return [];
+        }
+    }
+
+    function saveDateTasks(dateStr, tasks) {
+        try {
+            if (tasks.length === 0) {
+                localStorage.removeItem(getDateStorageKey(dateStr));
+            } else {
+                localStorage.setItem(getDateStorageKey(dateStr), JSON.stringify(tasks));
+            }
+        } catch(e) {
+            console.error('Ошибка сохранения:', e);
+        }
+    }
+
+    // ========== ХРАНИЛИЩЕ: ПОВТОРЫ ==========
 
     function loadRepeats() {
         try {
             var data = localStorage.getItem('weekly_repeats_v2');
             return data ? JSON.parse(data) : [];
         } catch(e) {
-            console.error('Ошибка загрузки повторов:', e);
             return [];
         }
     }
@@ -91,60 +142,37 @@
         }
     }
 
-    function generateId() {
-        return 'id_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    // ========== REPEATS SYSTEM ==========
+    // ========== СИСТЕМА ПОВТОРОВ ==========
     
     function getRepeatDays(repeat) {
         switch(repeat.type) {
-            case 'daily':
-                return [0, 1, 2, 3, 4, 5, 6];
-            case 'weekdays':
-                return [0, 1, 2, 3, 4];
-            case 'weekends':
-                return [5, 6];
-            case 'weekly':
-                return repeat.days || [];
-            default:
-                return [];
+            case 'daily': return [0, 1, 2, 3, 4, 5, 6];
+            case 'weekdays': return [0, 1, 2, 3, 4];
+            case 'weekends': return [5, 6];
+            case 'weekly': return repeat.days || [];
+            default: return [];
         }
     }
     
     function applyRepeats() {
-        var tasks = loadTasks();
+        var tasks = loadWeekTasks();
         var repeats = loadRepeats();
         var weekId = getWeekId();
         var changed = false;
 
-        console.log('Применяем повторы. Неделя:', weekId, 'Повторов:', repeats.length);
-
         for (var i = 0; i < repeats.length; i++) {
             var repeat = repeats[i];
+            if (!repeat.active) continue;
             
-            // Пропускаем неактивные
-            if (!repeat.active) {
-                console.log('Повтор неактивен:', repeat.text);
-                continue;
-            }
-            
-            // Проверяем, применяли ли уже на этой неделе
             var appliedKey = 'applied_' + weekId;
-            if (repeat[appliedKey]) {
-                console.log('Повтор уже применён на этой неделе:', repeat.text);
-                continue;
-            }
+            if (repeat[appliedKey]) continue;
 
             var daysToAdd = getRepeatDays(repeat);
-            console.log('Повтор:', repeat.text, 'Дни:', daysToAdd);
 
             for (var j = 0; j < daysToAdd.length; j++) {
                 var day = daysToAdd[j];
-                
                 if (!tasks[day]) tasks[day] = [];
                 
-                // Проверяем, нет ли уже такой задачи
                 var exists = false;
                 for (var k = 0; k < tasks[day].length; k++) {
                     if (tasks[day][k].repeatId === repeat.id) {
@@ -154,7 +182,6 @@
                 }
 
                 if (!exists) {
-                    console.log('Добавляем задачу в день', day, ':', repeat.text);
                     tasks[day].push({
                         id: generateId(),
                         text: repeat.text,
@@ -167,35 +194,45 @@
                 }
             }
             
-            // Отмечаем что применили
             repeat[appliedKey] = true;
         }
 
         if (changed) {
-            saveTasks(tasks);
+            saveWeekTasks(tasks);
             saveRepeats(repeats);
-            console.log('Задачи обновлены');
         }
         
         return tasks;
     }
     
-    // Принудительно применить повторы заново
-    function reapplyRepeats() {
-        var repeats = loadRepeats();
-        var weekId = getWeekId();
-        var appliedKey = 'applied_' + weekId;
+    function removeRepeatTasks(repeatId) {
+        // Удаляем задачи из текущей недели
+        var tasks = loadWeekTasks();
+        var changed = false;
         
-        // Сбрасываем флаги применения
-        for (var i = 0; i < repeats.length; i++) {
-            delete repeats[i][appliedKey];
+        for (var day = 0; day < 7; day++) {
+            var dayTasks = tasks[day] || [];
+            var newTasks = [];
+            
+            for (var i = 0; i < dayTasks.length; i++) {
+                if (dayTasks[i].repeatId !== repeatId) {
+                    newTasks.push(dayTasks[i]);
+                } else {
+                    changed = true;
+                }
+            }
+            
+            tasks[day] = newTasks;
         }
         
-        saveRepeats(repeats);
-        return applyRepeats();
+        if (changed) {
+            saveWeekTasks(tasks);
+        }
+        
+        return changed;
     }
 
-    // ========== TOAST ==========
+    // ========== UI УТИЛИТЫ ==========
     
     function showToast(message, type) {
         var existing = document.querySelector('.toast');
@@ -213,8 +250,6 @@
         }, 2500);
     }
 
-    // ========== HAPTIC ==========
-    
     function haptic(type) {
         if (!tg || !tg.HapticFeedback) return;
         try {
@@ -225,8 +260,6 @@
         } catch(e) {}
     }
 
-    // ========== UI HELPERS ==========
-    
     function escapeHtml(text) {
         var div = document.createElement('div');
         div.textContent = text || '';
@@ -254,9 +287,16 @@
             updatePriorityButtons('priority-select', 0);
         }
         
-        if (id === 'modal-repeat') {
-            var form2 = document.getElementById('form-add-repeat');
+        if (id === 'modal-add-calendar') {
+            var form2 = document.getElementById('form-add-calendar-task');
             if (form2) form2.reset();
+            selectedCalendarPriority = 0;
+            updatePriorityButtons('calendar-priority-select', 0);
+        }
+        
+        if (id === 'modal-repeat') {
+            var form3 = document.getElementById('form-add-repeat');
+            if (form3) form3.reset();
             selectedRepeatPriority = 0;
             selectedRepeatType = 'daily';
             selectedDays = [];
@@ -271,25 +311,24 @@
         if (!container) return;
         
         var btns = container.querySelectorAll('.priority-btn');
-        for (var i = 0; i < btns.length; i++) {
-            btns[i].classList.remove('active');
-            if (parseInt(btns[i].getAttribute('data-priority')) === priority) {
-                btns[i].classList.add('active');
+        btns.forEach(function(btn) {
+            btn.classList.remove('active');
+            if (parseInt(btn.getAttribute('data-priority')) === priority) {
+                btn.classList.add('active');
             }
-        }
+        });
     }
 
     function updateRepeatTypeButtons(type) {
         var container = document.getElementById('repeat-type-select');
         if (!container) return;
         
-        var btns = container.querySelectorAll('.repeat-type-btn');
-        for (var i = 0; i < btns.length; i++) {
-            btns[i].classList.remove('active');
-            if (btns[i].getAttribute('data-type') === type) {
-                btns[i].classList.add('active');
+        container.querySelectorAll('.repeat-type-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-type') === type) {
+                btn.classList.add('active');
             }
-        }
+        });
         
         var daysGroup = document.getElementById('days-select-group');
         if (daysGroup) {
@@ -301,19 +340,18 @@
         var container = document.getElementById('days-select');
         if (!container) return;
         
-        var btns = container.querySelectorAll('.day-btn');
-        for (var i = 0; i < btns.length; i++) {
-            var d = parseInt(btns[i].getAttribute('data-day'));
+        container.querySelectorAll('.day-btn').forEach(function(btn) {
+            var d = parseInt(btn.getAttribute('data-day'));
             if (days.indexOf(d) !== -1) {
-                btns[i].classList.add('active');
+                btn.classList.add('active');
             } else {
-                btns[i].classList.remove('active');
+                btn.classList.remove('active');
             }
-        }
+        });
     }
 
     function updateStats() {
-        var tasks = loadTasks();
+        var tasks = loadWeekTasks();
         var total = 0, done = 0;
 
         for (var day = 0; day < 7; day++) {
@@ -334,33 +372,23 @@
     }
 
     function updateTabs() {
-        var tasks = loadTasks();
-        var tabs = document.querySelectorAll('.tabs .tab');
-
-        for (var i = 0; i < tabs.length; i++) {
-            var tab = tabs[i];
+        var tasks = loadWeekTasks();
+        
+        document.querySelectorAll('.tabs .tab').forEach(function(tab) {
             var day = parseInt(tab.getAttribute('data-day'));
             var dayTasks = tasks[day] || [];
-            
-            var hasUndoneTasks = false;
-            for (var j = 0; j < dayTasks.length; j++) {
-                if (!dayTasks[j].done) {
-                    hasUndoneTasks = true;
-                    break;
-                }
-            }
+            var hasUndoneTasks = dayTasks.some(function(t) { return !t.done; });
 
             tab.classList.remove('active', 'has-tasks', 'today');
-
             if (day === currentDay) tab.classList.add('active');
             if (hasUndoneTasks) tab.classList.add('has-tasks');
             if (day === todayIndex) tab.classList.add('today');
-        }
+        });
     }
 
-    // ========== RENDER ==========
+    // ========== РЕНДЕР: НЕДЕЛЬНЫЕ ЗАДАЧИ ==========
 
-    function renderTasks() {
+    function renderWeekTasks() {
         var tasks = applyRepeats();
         var dayTasks = tasks[currentDay] || [];
         var list = document.getElementById('tasks-list');
@@ -369,7 +397,6 @@
 
         if (title) title.textContent = DAYS[currentDay];
 
-        // Сортировка: сначала невыполненные, потом по приоритету, потом по времени
         dayTasks.sort(function(a, b) {
             if (a.done !== b.done) return a.done ? 1 : -1;
             if (b.priority !== a.priority) return b.priority - a.priority;
@@ -384,47 +411,82 @@
             if (empty) empty.classList.add('show');
         } else {
             if (empty) empty.classList.remove('show');
-
-            var html = '';
-            for (var i = 0; i < dayTasks.length; i++) {
-                var t = dayTasks[i];
-                var priorityClass = t.priority || 0;
-                
-                html += '<div class="task-card ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '" data-priority="' + priorityClass + '">';
-                html += '<div class="task-checkbox ' + (t.done ? 'checked' : '') + '" data-id="' + t.id + '"></div>';
-                html += '<div class="task-content">';
-                html += '<div class="task-meta">';
-                
-                if (t.time) {
-                    html += '<span class="task-time">⏰ ' + escapeHtml(t.time) + '</span>';
-                }
-                
-                html += '<span class="task-priority" data-id="' + t.id + '">' + PRIORITY_EMOJI[t.priority || 0] + '</span>';
-                
-                if (t.repeatId) {
-                    html += '<span class="task-repeat">🔄</span>';
-                }
-                
-                html += '</div>';
-                html += '<div class="task-text">' + escapeHtml(t.text) + '</div>';
-                html += '</div>';
-                html += '<button class="task-delete" data-id="' + t.id + '">×</button>';
-                html += '</div>';
-            }
-            
-            if (list) list.innerHTML = html;
+            if (list) list.innerHTML = renderTasksList(dayTasks, 'week');
         }
 
         updateStats();
         updateTabs();
     }
 
+    // ========== РЕНДЕР: ЗАДАЧИ ПО ДАТЕ ==========
+
+    function renderDateTasks() {
+        var tasks = loadDateTasks(selectedDate);
+        var list = document.getElementById('calendar-tasks-list');
+        var empty = document.getElementById('empty-calendar');
+        var title = document.getElementById('calendar-title');
+
+        if (title) title.textContent = formatDateRu(selectedDate);
+
+        tasks.sort(function(a, b) {
+            if (a.done !== b.done) return a.done ? 1 : -1;
+            if (b.priority !== a.priority) return b.priority - a.priority;
+            if (!a.time && !b.time) return 0;
+            if (!a.time) return 1;
+            if (!b.time) return -1;
+            return a.time.localeCompare(b.time);
+        });
+
+        if (tasks.length === 0) {
+            if (list) list.innerHTML = '';
+            if (empty) empty.classList.add('show');
+        } else {
+            if (empty) empty.classList.remove('show');
+            if (list) list.innerHTML = renderTasksList(tasks, 'calendar');
+        }
+    }
+
+    // ========== ОБЩИЙ РЕНДЕР ЗАДАЧ ==========
+
+    function renderTasksList(tasks, source) {
+        var html = '';
+        
+        for (var i = 0; i < tasks.length; i++) {
+            var t = tasks[i];
+            var repeatClass = t.repeatId ? ' from-repeat' : '';
+            
+            html += '<div class="task-card ' + (t.done ? 'done' : '') + repeatClass + '" ';
+            html += 'data-id="' + t.id + '" data-priority="' + (t.priority || 0) + '" data-source="' + source + '">';
+            html += '<div class="task-checkbox ' + (t.done ? 'checked' : '') + '" data-id="' + t.id + '"></div>';
+            html += '<div class="task-content">';
+            html += '<div class="task-meta">';
+            
+            if (t.time) {
+                html += '<span class="task-time">⏰ ' + escapeHtml(t.time) + '</span>';
+            }
+            
+            html += '<span class="task-priority" data-id="' + t.id + '">' + PRIORITY_EMOJI[t.priority || 0] + '</span>';
+            
+            if (t.repeatId) {
+                html += '<span class="task-repeat">🔄</span>';
+            }
+            
+            html += '</div>';
+            html += '<div class="task-text">' + escapeHtml(t.text) + '</div>';
+            html += '</div>';
+            html += '<button class="task-delete" data-id="' + t.id + '">×</button>';
+            html += '</div>';
+        }
+        
+        return html;
+    }
+
+    // ========== РЕНДЕР: ПОВТОРЫ ==========
+
     function renderRepeats() {
         var repeats = loadRepeats();
         var list = document.getElementById('repeats-list');
         var empty = document.getElementById('empty-repeats');
-
-        console.log('Рендер повторов:', repeats.length);
 
         if (repeats.length === 0) {
             if (list) list.innerHTML = '';
@@ -438,14 +500,7 @@
         for (var i = 0; i < repeats.length; i++) {
             var r = repeats[i];
             var schedule = REPEAT_LABELS[r.type] || r.type;
-            
-            if (r.type === 'weekly' && r.days && r.days.length > 0) {
-                var dayNames = [];
-                for (var j = 0; j < r.days.length; j++) {
-                    dayNames.push(DAYS_SHORT[r.days[j]]);
-                }
-                schedule = dayNames.join(', ');
-            }
+            var daysToShow = getRepeatDays(r);
             
             var statusClass = r.active ? '' : 'inactive';
             var toggleText = r.active ? '⏸ Пауза' : '▶️ Включить';
@@ -463,6 +518,15 @@
             
             html += '<span class="repeat-badge">📅 ' + escapeHtml(schedule) + '</span>';
             html += '</div>';
+            
+            // Превью дней
+            html += '<div class="repeat-days-preview">';
+            for (var d = 0; d < 7; d++) {
+                var isActive = daysToShow.indexOf(d) !== -1;
+                html += '<div class="repeat-day-dot ' + (isActive ? 'active' : '') + '">' + DAYS_SHORT[d] + '</div>';
+            }
+            html += '</div>';
+            
             html += '<div class="repeat-actions">';
             html += '<button class="btn-toggle" data-id="' + r.id + '">' + toggleText + '</button>';
             html += '<button class="btn-remove" data-id="' + r.id + '">🗑 Удалить</button>';
@@ -473,10 +537,10 @@
         if (list) list.innerHTML = html;
     }
 
-    // ========== TASK ACTIONS ==========
+    // ========== ДЕЙСТВИЯ: НЕДЕЛЬНЫЕ ЗАДАЧИ ==========
     
-    function toggleTask(id) {
-        var tasks = loadTasks();
+    function toggleWeekTask(id) {
+        var tasks = loadWeekTasks();
         var dayTasks = tasks[currentDay] || [];
 
         for (var i = 0; i < dayTasks.length; i++) {
@@ -487,34 +551,25 @@
             }
         }
 
-        saveTasks(tasks);
+        saveWeekTasks(tasks);
         haptic('success');
-        renderTasks();
+        renderWeekTasks();
     }
 
-    function deleteTask(id) {
-        var tasks = loadTasks();
-        var dayTasks = tasks[currentDay] || [];
-        var newTasks = [];
-        
-        for (var i = 0; i < dayTasks.length; i++) {
-            if (dayTasks[i].id !== id) {
-                newTasks.push(dayTasks[i]);
-            }
-        }
-        
-        tasks[currentDay] = newTasks;
-        saveTasks(tasks);
+    function deleteWeekTask(id) {
+        var tasks = loadWeekTasks();
+        tasks[currentDay] = (tasks[currentDay] || []).filter(function(t) { return t.id !== id; });
+        saveWeekTasks(tasks);
         haptic('success');
         showToast('Задача удалена', 'success');
-        renderTasks();
+        renderWeekTasks();
         closeModal('modal-confirm');
     }
 
-    function addTask(text, time, priority) {
+    function addWeekTask(text, time, priority) {
         if (!text || !text.trim()) return;
         
-        var tasks = loadTasks();
+        var tasks = loadWeekTasks();
         if (!tasks[currentDay]) tasks[currentDay] = [];
 
         tasks[currentDay].push({
@@ -526,33 +581,31 @@
             repeatId: null
         });
 
-        saveTasks(tasks);
+        saveWeekTasks(tasks);
         haptic('success');
         showToast('Задача добавлена!', 'success');
-        renderTasks();
+        renderWeekTasks();
     }
 
-    function changePriority(priority) {
-        var tasks = loadTasks();
+    function changeWeekPriority(id, priority) {
+        var tasks = loadWeekTasks();
         var dayTasks = tasks[currentDay] || [];
 
         for (var i = 0; i < dayTasks.length; i++) {
-            if (dayTasks[i].id === priorityTaskId) {
+            if (dayTasks[i].id === id) {
                 dayTasks[i].priority = priority;
                 break;
             }
         }
 
-        saveTasks(tasks);
+        saveWeekTasks(tasks);
         haptic('success');
-        showToast('Приоритет изменён', 'success');
-        renderTasks();
+        renderWeekTasks();
         closeModal('modal-priority');
-        priorityTaskId = null;
     }
 
-    function clearDay() {
-        var tasks = loadTasks();
+    function clearWeekDay() {
+        var tasks = loadWeekTasks();
         var count = (tasks[currentDay] || []).length;
         
         if (count === 0) {
@@ -561,67 +614,148 @@
         }
         
         haptic('warning');
-        var confirmText = document.getElementById('confirm-text');
-        if (confirmText) {
-            confirmText.textContent = 'Удалить все ' + count + ' задач за ' + DAYS[currentDay] + '?';
-        }
+        document.getElementById('confirm-text').textContent = 
+            'Удалить все ' + count + ' задач за ' + DAYS[currentDay] + '?';
         
         confirmCallback = function() {
-            var tasks = loadTasks();
+            var tasks = loadWeekTasks();
             tasks[currentDay] = [];
-            saveTasks(tasks);
+            saveWeekTasks(tasks);
             haptic('success');
             showToast('День очищен', 'success');
-            renderTasks();
+            renderWeekTasks();
             closeModal('modal-confirm');
         };
         
         openModal('modal-confirm');
     }
 
-    // ========== REPEAT ACTIONS ==========
+    // ========== ДЕЙСТВИЯ: ЗАДАЧИ ПО ДАТЕ ==========
 
-    function toggleRepeat(id) {
-        var repeats = loadRepeats();
-        var found = false;
+    function toggleDateTask(id) {
+        var tasks = loadDateTasks(selectedDate);
 
-        for (var i = 0; i < repeats.length; i++) {
-            if (repeats[i].id === id) {
-                repeats[i].active = !repeats[i].active;
-                found = true;
-                showToast(repeats[i].active ? 'Повтор включён' : 'Повтор на паузе', 'success');
-                console.log('Переключён повтор:', repeats[i].text, 'Активен:', repeats[i].active);
+        for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].id === id) {
+                tasks[i].done = !tasks[i].done;
+                showToast(tasks[i].done ? '✓ Выполнено!' : 'Возвращено', 'success');
                 break;
             }
         }
 
-        if (found) {
-            saveRepeats(repeats);
-            haptic('success');
-            renderRepeats();
+        saveDateTasks(selectedDate, tasks);
+        haptic('success');
+        renderDateTasks();
+    }
+
+    function deleteDateTask(id) {
+        var tasks = loadDateTasks(selectedDate);
+        tasks = tasks.filter(function(t) { return t.id !== id; });
+        saveDateTasks(selectedDate, tasks);
+        haptic('success');
+        showToast('Задача удалена', 'success');
+        renderDateTasks();
+        closeModal('modal-confirm');
+    }
+
+    function addDateTask(text, time, priority) {
+        if (!text || !text.trim()) return;
+        
+        var tasks = loadDateTasks(selectedDate);
+
+        tasks.push({
+            id: generateId(),
+            text: text.trim(),
+            time: time || null,
+            priority: priority || 0,
+            done: false
+        });
+
+        saveDateTasks(selectedDate, tasks);
+        haptic('success');
+        showToast('Задача добавлена!', 'success');
+        renderDateTasks();
+    }
+
+    function changeDatePriority(id, priority) {
+        var tasks = loadDateTasks(selectedDate);
+
+        for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].id === id) {
+                tasks[i].priority = priority;
+                break;
+            }
         }
+
+        saveDateTasks(selectedDate, tasks);
+        haptic('success');
+        renderDateTasks();
+        closeModal('modal-priority');
+    }
+
+    function clearDate() {
+        var tasks = loadDateTasks(selectedDate);
+        
+        if (tasks.length === 0) {
+            showToast('Дата уже пуста', 'error');
+            return;
+        }
+        
+        haptic('warning');
+        document.getElementById('confirm-text').textContent = 
+            'Удалить все задачи за ' + formatDateRu(selectedDate) + '?';
+        
+        confirmCallback = function() {
+            saveDateTasks(selectedDate, []);
+            haptic('success');
+            showToast('Дата очищена', 'success');
+            renderDateTasks();
+            closeModal('modal-confirm');
+        };
+        
+        openModal('modal-confirm');
+    }
+
+    // ========== ДЕЙСТВИЯ: ПОВТОРЫ ==========
+
+    function toggleRepeat(id) {
+        var repeats = loadRepeats();
+
+        for (var i = 0; i < repeats.length; i++) {
+            if (repeats[i].id === id) {
+                repeats[i].active = !repeats[i].active;
+                showToast(repeats[i].active ? 'Повтор включён' : 'Повтор на паузе', 'success');
+                break;
+            }
+        }
+
+        saveRepeats(repeats);
+        haptic('success');
+        renderRepeats();
     }
 
     function deleteRepeat(id) {
         var repeats = loadRepeats();
-        var newRepeats = [];
         var deletedText = '';
         
-        for (var i = 0; i < repeats.length; i++) {
-            if (repeats[i].id !== id) {
-                newRepeats.push(repeats[i]);
-            } else {
-                deletedText = repeats[i].text;
+        repeats = repeats.filter(function(r) {
+            if (r.id === id) {
+                deletedText = r.text;
+                return false;
             }
-        }
+            return true;
+        });
         
-        saveRepeats(newRepeats);
+        saveRepeats(repeats);
+        
+        // Удаляем связанные задачи
+        var removed = removeRepeatTasks(id);
+        
         haptic('success');
-        showToast('Повтор "' + deletedText + '" удалён', 'success');
-        console.log('Удалён повтор:', deletedText);
+        showToast('Повтор удалён' + (removed ? ' и связанные задачи' : ''), 'success');
         renderRepeats();
+        renderWeekTasks();
         closeModal('modal-confirm');
-        deleteRepeatId = null;
     }
 
     function createRepeat(text, time, priority, type, days) {
@@ -638,7 +772,7 @@
         
         var repeats = loadRepeats();
         
-        var newRepeat = {
+        repeats.push({
             id: generateId(),
             text: text.trim(),
             time: time || null,
@@ -646,21 +780,15 @@
             type: type,
             days: (type === 'weekly') ? days.slice() : [],
             active: true
-        };
+        });
 
-        repeats.push(newRepeat);
         saveRepeats(repeats);
-        
-        console.log('Создан повтор:', newRepeat);
-        
         haptic('success');
         showToast('Повтор создан!', 'success');
         
-        // Сразу применяем к текущей неделе
         applyRepeats();
-        
         renderRepeats();
-        renderTasks();
+        renderWeekTasks();
         
         return true;
     }
@@ -668,32 +796,35 @@
     // ========== SWIPE ==========
     
     var touchStartX = 0;
-    var touchEndX = 0;
     
-    function handleSwipe() {
-        var diff = touchStartX - touchEndX;
-        if (Math.abs(diff) > 60) {
+    function handleSwipe(endX) {
+        var diff = touchStartX - endX;
+        if (Math.abs(diff) > 60 && currentView === 'tasks') {
             if (diff > 0 && currentDay < 6) {
                 currentDay++;
                 haptic('light');
-                renderTasks();
+                renderWeekTasks();
             } else if (diff < 0 && currentDay > 0) {
                 currentDay--;
                 haptic('light');
-                renderTasks();
+                renderWeekTasks();
             }
         }
     }
 
-    // ========== INITIALIZATION ==========
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     
     function init() {
-        console.log('=== Инициализация еженедельника ===');
-        console.log('Текущий день:', DAYS[currentDay]);
-        console.log('Неделя:', getWeekId());
+        console.log('=== Инициализация еженедельника v2 ===');
         
-        // Первичный рендер
-        renderTasks();
+        // Установка сегодняшней даты
+        var datePicker = document.getElementById('calendar-date');
+        if (datePicker) {
+            datePicker.value = selectedDate;
+        }
+        
+        renderWeekTasks();
+        renderDateTasks();
         renderRepeats();
 
         // === SWIPE ===
@@ -704,14 +835,12 @@
             }, { passive: true });
             
             tasksContainer.addEventListener('touchend', function(e) {
-                touchEndX = e.changedTouches[0].screenX;
-                handleSwipe();
+                handleSwipe(e.changedTouches[0].screenX);
             }, { passive: true });
         }
 
         // === NAV TABS ===
-        var navTabs = document.querySelectorAll('.nav-tab');
-        navTabs.forEach(function(tab) {
+        document.querySelectorAll('.nav-tab').forEach(function(tab) {
             tab.addEventListener('click', function(e) {
                 e.preventDefault();
                 currentView = this.getAttribute('data-view');
@@ -730,25 +859,30 @@
 
                 haptic('light');
                 
-                // Перерендер при переключении
-                if (currentView === 'repeats') {
-                    renderRepeats();
-                } else {
-                    renderTasks();
-                }
+                if (currentView === 'tasks') renderWeekTasks();
+                else if (currentView === 'calendar') renderDateTasks();
+                else if (currentView === 'repeats') renderRepeats();
             });
         });
 
         // === DAY TABS ===
-        var dayTabs = document.querySelectorAll('.tabs .tab');
-        dayTabs.forEach(function(tab) {
+        document.querySelectorAll('.tabs .tab').forEach(function(tab) {
             tab.addEventListener('click', function(e) {
                 e.preventDefault();
                 currentDay = parseInt(this.getAttribute('data-day'));
                 haptic('light');
-                renderTasks();
+                renderWeekTasks();
             });
         });
+
+        // === DATE PICKER ===
+        var datePickerEl = document.getElementById('calendar-date');
+        if (datePickerEl) {
+            datePickerEl.addEventListener('change', function() {
+                selectedDate = this.value;
+                renderDateTasks();
+            });
+        }
 
         // === FAB BUTTON ===
         var btnAdd = document.getElementById('btn-add');
@@ -756,20 +890,31 @@
             btnAdd.addEventListener('click', function(e) {
                 e.preventDefault();
                 haptic('light');
+                
                 if (currentView === 'tasks') {
                     openModal('modal-add');
-                } else {
+                } else if (currentView === 'calendar') {
+                    openModal('modal-add-calendar');
+                } else if (currentView === 'repeats') {
                     openModal('modal-repeat');
                 }
             });
         }
 
-        // === CLEAR DAY ===
-        var btnClear = document.getElementById('btn-clear-day');
-        if (btnClear) {
-            btnClear.addEventListener('click', function(e) {
+        // === CLEAR BUTTONS ===
+        var btnClearDay = document.getElementById('btn-clear-day');
+        if (btnClearDay) {
+            btnClearDay.addEventListener('click', function(e) {
                 e.preventDefault();
-                clearDay();
+                clearWeekDay();
+            });
+        }
+
+        var btnClearDate = document.getElementById('btn-clear-date');
+        if (btnClearDate) {
+            btnClearDate.addEventListener('click', function(e) {
+                e.preventDefault();
+                clearDate();
             });
         }
 
@@ -782,40 +927,35 @@
             });
         });
 
-        // Click outside modal
         document.querySelectorAll('.modal').forEach(function(modal) {
             modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal(this.id);
-                }
+                if (e.target === this) closeModal(this.id);
             });
         });
 
-        // === PRIORITY BUTTONS (ADD TASK) ===
-        var prioSelect = document.getElementById('priority-select');
-        if (prioSelect) {
-            prioSelect.querySelectorAll('.priority-btn').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    selectedPriority = parseInt(this.getAttribute('data-priority'));
-                    updatePriorityButtons('priority-select', selectedPriority);
-                    haptic('light');
+        // === PRIORITY BUTTONS ===
+        ['priority-select', 'calendar-priority-select', 'repeat-priority-select'].forEach(function(containerId) {
+            var container = document.getElementById(containerId);
+            if (container) {
+                container.querySelectorAll('.priority-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var priority = parseInt(this.getAttribute('data-priority'));
+                        
+                        if (containerId === 'priority-select') {
+                            selectedPriority = priority;
+                        } else if (containerId === 'calendar-priority-select') {
+                            selectedCalendarPriority = priority;
+                        } else {
+                            selectedRepeatPriority = priority;
+                        }
+                        
+                        updatePriorityButtons(containerId, priority);
+                        haptic('light');
+                    });
                 });
-            });
-        }
-
-        // === PRIORITY BUTTONS (REPEAT) ===
-        var repeatPrioSelect = document.getElementById('repeat-priority-select');
-        if (repeatPrioSelect) {
-            repeatPrioSelect.querySelectorAll('.priority-btn').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    selectedRepeatPriority = parseInt(this.getAttribute('data-priority'));
-                    updatePriorityButtons('repeat-priority-select', selectedRepeatPriority);
-                    haptic('light');
-                });
-            });
-        }
+            }
+        });
 
         // === REPEAT TYPE ===
         var repeatTypeSelect = document.getElementById('repeat-type-select');
@@ -826,7 +966,6 @@
                     selectedRepeatType = this.getAttribute('data-type');
                     updateRepeatTypeButtons(selectedRepeatType);
                     haptic('light');
-                    console.log('Выбран тип повтора:', selectedRepeatType);
                 });
             });
         }
@@ -848,55 +987,47 @@
                     
                     updateDaysButtons(selectedDays);
                     haptic('light');
-                    console.log('Выбранные дни:', selectedDays);
                 });
             });
         }
 
-        // === ADD TASK FORM ===
+        // === FORMS ===
         var formAddTask = document.getElementById('form-add-task');
         if (formAddTask) {
             formAddTask.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
-                var textInput = document.getElementById('task-text');
-                var timeInput = document.getElementById('task-time');
-                
-                var text = textInput ? textInput.value.trim() : '';
-                var time = timeInput ? timeInput.value : '';
+                var text = document.getElementById('task-text').value.trim();
+                var time = document.getElementById('task-time').value;
                 
                 if (text) {
-                    addTask(text, time, selectedPriority);
+                    addWeekTask(text, time, selectedPriority);
                     closeModal('modal-add');
-                } else {
-                    showToast('Введите текст задачи', 'error');
                 }
             });
         }
 
-        // === ADD REPEAT FORM ===
+        var formAddCalendarTask = document.getElementById('form-add-calendar-task');
+        if (formAddCalendarTask) {
+            formAddCalendarTask.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var text = document.getElementById('calendar-task-text').value.trim();
+                var time = document.getElementById('calendar-task-time').value;
+                
+                if (text) {
+                    addDateTask(text, time, selectedCalendarPriority);
+                    closeModal('modal-add-calendar');
+                }
+            });
+        }
+
         var formAddRepeat = document.getElementById('form-add-repeat');
         if (formAddRepeat) {
             formAddRepeat.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
-                var textInput = document.getElementById('repeat-text');
-                var timeInput = document.getElementById('repeat-time');
-                
-                var text = textInput ? textInput.value.trim() : '';
-                var time = timeInput ? timeInput.value : '';
+                var text = document.getElementById('repeat-text').value.trim();
+                var time = document.getElementById('repeat-time').value;
 
-                console.log('Создание повтора:', {
-                    text: text,
-                    time: time,
-                    priority: selectedRepeatPriority,
-                    type: selectedRepeatType,
-                    days: selectedDays
-                });
-
-                var success = createRepeat(text, time, selectedRepeatPriority, selectedRepeatType, selectedDays.slice());
-                
-                if (success) {
+                if (createRepeat(text, time, selectedRepeatPriority, selectedRepeatType, selectedDays.slice())) {
                     closeModal('modal-repeat');
                 }
             });
@@ -908,7 +1039,15 @@
             prioChange.querySelectorAll('.priority-option').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    changePriority(parseInt(this.getAttribute('data-priority')));
+                    var priority = parseInt(this.getAttribute('data-priority'));
+                    
+                    if (prioritySource === 'calendar') {
+                        changeDatePriority(priorityTaskId, priority);
+                    } else {
+                        changeWeekPriority(priorityTaskId, priority);
+                    }
+                    
+                    priorityTaskId = null;
                 });
             });
         }
@@ -918,14 +1057,12 @@
         if (btnConfirm) {
             btnConfirm.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (confirmCallback) {
-                    confirmCallback();
-                }
+                if (confirmCallback) confirmCallback();
                 confirmCallback = null;
             });
         }
 
-        // === TASK LIST DELEGATION ===
+        // === TASK LIST DELEGATION (WEEK) ===
         var tasksList = document.getElementById('tasks-list');
         if (tasksList) {
             tasksList.addEventListener('click', function(e) {
@@ -934,12 +1071,13 @@
 
                 if (target.classList.contains('task-checkbox')) {
                     e.preventDefault();
-                    if (id) toggleTask(id);
+                    if (id) toggleWeekTask(id);
                     
                 } else if (target.classList.contains('task-priority')) {
                     e.preventDefault();
                     if (id) {
                         priorityTaskId = id;
+                        prioritySource = 'week';
                         haptic('light');
                         openModal('modal-priority');
                     }
@@ -948,9 +1086,40 @@
                     e.preventDefault();
                     if (id) {
                         haptic('warning');
-                        var confirmText = document.getElementById('confirm-text');
-                        if (confirmText) confirmText.textContent = 'Удалить задачу?';
-                        confirmCallback = function() { deleteTask(id); };
+                        document.getElementById('confirm-text').textContent = 'Удалить задачу?';
+                        confirmCallback = function() { deleteWeekTask(id); };
+                        openModal('modal-confirm');
+                    }
+                }
+            });
+        }
+
+        // === TASK LIST DELEGATION (CALENDAR) ===
+        var calendarTasksList = document.getElementById('calendar-tasks-list');
+        if (calendarTasksList) {
+            calendarTasksList.addEventListener('click', function(e) {
+                var target = e.target;
+                var id = target.getAttribute('data-id');
+
+                if (target.classList.contains('task-checkbox')) {
+                    e.preventDefault();
+                    if (id) toggleDateTask(id);
+                    
+                } else if (target.classList.contains('task-priority')) {
+                    e.preventDefault();
+                    if (id) {
+                        priorityTaskId = id;
+                        prioritySource = 'calendar';
+                        haptic('light');
+                        openModal('modal-priority');
+                    }
+                    
+                } else if (target.classList.contains('task-delete')) {
+                    e.preventDefault();
+                    if (id) {
+                        haptic('warning');
+                        document.getElementById('confirm-text').textContent = 'Удалить задачу?';
+                        confirmCallback = function() { deleteDateTask(id); };
                         openModal('modal-confirm');
                     }
                 }
@@ -963,8 +1132,6 @@
             repeatsList.addEventListener('click', function(e) {
                 var target = e.target;
                 var id = target.getAttribute('data-id');
-                
-                console.log('Клик в списке повторов:', target.className, 'ID:', id);
 
                 if (target.classList.contains('btn-toggle')) {
                     e.preventDefault();
@@ -974,10 +1141,9 @@
                     e.preventDefault();
                     if (id) {
                         haptic('warning');
-                        deleteRepeatId = id;
-                        var confirmText = document.getElementById('confirm-text');
-                        if (confirmText) confirmText.textContent = 'Удалить повтор?';
-                        confirmCallback = function() { deleteRepeat(deleteRepeatId); };
+                        document.getElementById('confirm-text').textContent = 
+                            'Удалить повтор и все связанные задачи?';
+                        confirmCallback = function() { deleteRepeat(id); };
                         openModal('modal-confirm');
                     }
                 }
@@ -988,6 +1154,7 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModal('modal-add');
+                closeModal('modal-add-calendar');
                 closeModal('modal-repeat');
                 closeModal('modal-confirm');
                 closeModal('modal-priority');
