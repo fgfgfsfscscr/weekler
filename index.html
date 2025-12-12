@@ -25,6 +25,7 @@
             <button class="nav-tab" data-view="repeats">🔄 Повторы</button>
         </nav>
 
+        <!-- ВКЛАДКА: НЕДЕЛЯ -->
         <div class="view active" id="view-tasks">
             <div class="tabs" id="tabs">
                 <button class="tab" data-day="0">Пн</button>
@@ -51,6 +52,7 @@
             </div>
         </div>
 
+        <!-- ВКЛАДКА: ДАТА -->
         <div class="view" id="view-calendar">
             <div class="calendar-header">
                 <input type="date" id="calendar-date" class="date-picker">
@@ -71,6 +73,7 @@
             </div>
         </div>
 
+        <!-- ВКЛАДКА: ПОВТОРЫ -->
         <div class="view" id="view-repeats">
             <div class="section-header">
                 <h2>🔄 Повторяющиеся задачи</h2>
@@ -88,6 +91,7 @@
         <button class="fab" id="btn-add">+</button>
     </div>
 
+    <!-- МОДАЛКА: ЗАДАЧА НА НЕДЕЛЮ -->
     <div class="modal" id="modal-add">
         <div class="modal-content">
             <div class="modal-header">
@@ -99,10 +103,35 @@
                     <label>Задача</label>
                     <input type="text" id="task-text" placeholder="Что нужно сделать?" maxlength="100" required>
                 </div>
+                
                 <div class="form-group">
+                    <label>Тип времени</label>
+                    <div class="time-type-select" id="time-type-select">
+                        <button type="button" class="time-type-btn active" data-type="none">Без времени</button>
+                        <button type="button" class="time-type-btn" data-type="single">Время</button>
+                        <button type="button" class="time-type-btn" data-type="interval">Интервал</button>
+                    </div>
+                </div>
+                
+                <div class="form-group time-single" id="time-single-group" style="display:none">
                     <label>Время</label>
                     <input type="time" id="task-time">
                 </div>
+                
+                <div class="form-group time-interval" id="time-interval-group" style="display:none">
+                    <label>Интервал времени</label>
+                    <div class="time-row">
+                        <div class="time-field">
+                            <span>с</span>
+                            <input type="time" id="task-time-start">
+                        </div>
+                        <div class="time-field">
+                            <span>до</span>
+                            <input type="time" id="task-time-end">
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label>Приоритет</label>
                     <div class="priority-select" id="priority-select">
@@ -117,6 +146,7 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА: ЗАДАЧА НА ДАТУ -->
     <div class="modal" id="modal-add-calendar">
         <div class="modal-content">
             <div class="modal-header">
@@ -128,10 +158,35 @@
                     <label>Задача</label>
                     <input type="text" id="calendar-task-text" placeholder="Что нужно сделать?" maxlength="100" required>
                 </div>
+                
                 <div class="form-group">
+                    <label>Тип времени</label>
+                    <div class="time-type-select" id="calendar-time-type-select">
+                        <button type="button" class="time-type-btn active" data-type="none">Без времени</button>
+                        <button type="button" class="time-type-btn" data-type="single">Время</button>
+                        <button type="button" class="time-type-btn" data-type="interval">Интервал</button>
+                    </div>
+                </div>
+                
+                <div class="form-group time-single" id="calendar-time-single-group" style="display:none">
                     <label>Время</label>
                     <input type="time" id="calendar-task-time">
                 </div>
+                
+                <div class="form-group time-interval" id="calendar-time-interval-group" style="display:none">
+                    <label>Интервал времени</label>
+                    <div class="time-row">
+                        <div class="time-field">
+                            <span>с</span>
+                            <input type="time" id="calendar-task-time-start">
+                        </div>
+                        <div class="time-field">
+                            <span>до</span>
+                            <input type="time" id="calendar-task-time-end">
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label>Приоритет</label>
                     <div class="priority-select" id="calendar-priority-select">
@@ -146,6 +201,7 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА: ПОВТОР -->
     <div class="modal" id="modal-repeat">
         <div class="modal-content modal-large">
             <div class="modal-header">
@@ -157,10 +213,35 @@
                     <label>Задача</label>
                     <input type="text" id="repeat-text" placeholder="Что повторять?" maxlength="100" required>
                 </div>
+                
                 <div class="form-group">
+                    <label>Тип времени</label>
+                    <div class="time-type-select" id="repeat-time-type-select">
+                        <button type="button" class="time-type-btn active" data-type="none">Без времени</button>
+                        <button type="button" class="time-type-btn" data-type="single">Время</button>
+                        <button type="button" class="time-type-btn" data-type="interval">Интервал</button>
+                    </div>
+                </div>
+                
+                <div class="form-group time-single" id="repeat-time-single-group" style="display:none">
                     <label>Время</label>
                     <input type="time" id="repeat-time">
                 </div>
+                
+                <div class="form-group time-interval" id="repeat-time-interval-group" style="display:none">
+                    <label>Интервал времени</label>
+                    <div class="time-row">
+                        <div class="time-field">
+                            <span>с</span>
+                            <input type="time" id="repeat-time-start">
+                        </div>
+                        <div class="time-field">
+                            <span>до</span>
+                            <input type="time" id="repeat-time-end">
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label>Приоритет</label>
                     <div class="priority-select" id="repeat-priority-select">
@@ -196,6 +277,7 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА: ПОДТВЕРЖДЕНИЕ -->
     <div class="modal" id="modal-confirm">
         <div class="modal-content modal-small">
             <p id="confirm-text">Вы уверены?</p>
@@ -206,6 +288,7 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА: ПРИОРИТЕТ -->
     <div class="modal" id="modal-priority">
         <div class="modal-content modal-small">
             <h3>Изменить приоритет</h3>
