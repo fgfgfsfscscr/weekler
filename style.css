@@ -1,5 +1,4 @@
 :root {
-    /* ТЁМНАЯ ТЕМА */
     --bg: #0f172a;
     --bg-secondary: #1e293b;
     --bg-card: #334155;
@@ -33,27 +32,17 @@ body {
     padding-bottom: 80px;
 }
 
-/* ========== HEADER ========== */
+/* Header */
 .header {
     background: linear-gradient(135deg, #1e3a8a, #3b82f6);
     color: white;
     padding: 18px;
     text-align: center;
-    border-bottom: 1px solid var(--border);
 }
 
-.header h1 { 
-    font-size: 22px; 
-    margin-bottom: 12px;
-    font-weight: 700;
-}
+.header h1 { font-size: 22px; margin-bottom: 12px; }
 
-.stats { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 12px; 
-}
+.stats { display: flex; align-items: center; justify-content: center; gap: 12px; }
 
 .stats-bar {
     width: 120px;
@@ -67,21 +56,16 @@ body {
     height: 100%; 
     background: var(--success); 
     transition: width 0.3s;
-    border-radius: 4px;
 }
 
-#stats-text {
-    font-weight: 600;
-    font-size: 14px;
-}
+#stats-text { font-weight: 600; font-size: 14px; }
 
-/* ========== NAVIGATION TABS ========== */
+/* Navigation */
 .nav-tabs { 
     display: flex; 
     background: var(--bg-secondary); 
     padding: 8px; 
     gap: 6px;
-    border-bottom: 1px solid var(--border);
 }
 
 .nav-tab {
@@ -97,28 +81,21 @@ body {
     transition: all 0.2s;
 }
 
-.nav-tab:hover {
-    background: var(--secondary);
-    color: var(--text);
-}
-
 .nav-tab.active { 
     background: var(--accent); 
     color: white; 
-    box-shadow: var(--shadow); 
 }
 
-/* ========== VIEWS ========== */
+/* Views */
 .view { display: none; flex-direction: column; flex: 1; }
 .view.active { display: flex; }
 
-/* ========== DAY TABS ========== */
+/* Day Tabs */
 .tabs { 
     display: flex; 
     padding: 10px 8px; 
     gap: 6px; 
     background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -135,22 +112,13 @@ body {
     transition: all 0.2s;
 }
 
-.tab:hover {
-    border-color: var(--accent);
-    color: var(--accent-light);
-    background: var(--secondary);
-}
-
-/* АКТИВНЫЙ ДЕНЬ */
 .tab.active { 
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
     transform: scale(1.05);
 }
 
-/* Точка для дней с задачами */
 .tab.has-tasks::after {
     content: '';
     position: absolute;
@@ -161,29 +129,30 @@ body {
     height: 6px;
     background: var(--success);
     border-radius: 50%;
-    box-shadow: 0 0 6px var(--success);
 }
 
-.tab.active.has-tasks::after { 
-    background: white;
-    box-shadow: 0 0 6px white;
+.tab.active.has-tasks::after { background: white; }
+
+.tab.today::before {
+    content: '•';
+    position: absolute;
+    top: 2px;
+    right: 50%;
+    transform: translateX(50%);
+    color: var(--warning);
+    font-size: 16px;
 }
 
-/* ========== DAY HEADER ========== */
+/* Day Header */
 .day-header, .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    border-bottom: 1px solid var(--border);
     background: var(--bg-secondary);
 }
 
-.day-header h2, .section-header h2 { 
-    font-size: 20px; 
-    font-weight: 700;
-    color: var(--text);
-}
+.day-header h2, .section-header h2 { font-size: 20px; }
 
 .btn-icon {
     width: 40px;
@@ -196,17 +165,13 @@ body {
     transition: all 0.2s;
 }
 
-.btn-icon:hover {
-    background: var(--danger);
-    transform: scale(1.1);
-}
+.btn-icon:hover { background: var(--danger); }
 
-/* ========== TASKS CONTAINER ========== */
+/* Tasks */
 .tasks-container, .repeats-container { 
     flex: 1; 
     padding: 14px; 
     overflow-y: auto;
-    background: var(--bg);
 }
 
 .tasks-list, .repeats-list { 
@@ -215,7 +180,7 @@ body {
     gap: 12px; 
 }
 
-/* ========== TASK CARD ========== */
+/* Task Card */
 .task-card {
     background: var(--bg-card);
     border-radius: var(--radius);
@@ -226,17 +191,12 @@ body {
     gap: 14px;
     box-shadow: var(--shadow);
     position: relative;
-    animation: slideIn 0.2s ease;
     border: 1px solid var(--border);
+    animation: slideIn 0.2s ease;
 }
 
-.task-card:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
+.task-card:hover { border-color: var(--accent); }
 
-/* Цветная полоска приоритета */
 .task-card::before {
     content: '';
     position: absolute;
@@ -246,26 +206,19 @@ body {
     background: var(--secondary);
 }
 
-.task-card[data-priority="1"]::before { background: var(--success); box-shadow: 0 0 8px var(--success); }
-.task-card[data-priority="2"]::before { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
-.task-card[data-priority="3"]::before { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+.task-card[data-priority="1"]::before { background: var(--success); }
+.task-card[data-priority="2"]::before { background: var(--warning); }
+.task-card[data-priority="3"]::before { background: var(--danger); }
 
-.task-card.done { 
-    opacity: 0.5; 
-    background: var(--bg-secondary);
-}
-
-.task-card.done .task-text { 
-    text-decoration: line-through;
-    color: var(--hint);
-}
+.task-card.done { opacity: 0.5; }
+.task-card.done .task-text { text-decoration: line-through; }
 
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
-/* ========== CHECKBOX ========== */
+/* Checkbox */
 .task-checkbox {
     width: 28px; 
     height: 28px;
@@ -277,19 +230,13 @@ body {
     justify-content: center;
     flex-shrink: 0;
     transition: all 0.2s;
-    background: transparent;
 }
 
-.task-checkbox:hover {
-    border-color: var(--success);
-    box-shadow: 0 0 10px var(--success);
-    transform: scale(1.1);
-}
+.task-checkbox:hover { border-color: var(--success); }
 
 .task-checkbox.checked { 
     background: var(--success); 
     border-color: var(--success);
-    box-shadow: 0 0 10px var(--success);
 }
 
 .task-checkbox.checked::after { 
@@ -299,11 +246,8 @@ body {
     font-weight: bold; 
 }
 
-/* ========== TASK CONTENT ========== */
-.task-content { 
-    flex: 1; 
-    min-width: 0; 
-}
+/* Task Content */
+.task-content { flex: 1; min-width: 0; }
 
 .task-meta { 
     display: flex; 
@@ -313,7 +257,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* ВРЕМЯ */
 .task-time { 
     font-size: 13px; 
     color: white;
@@ -321,43 +264,30 @@ body {
     padding: 4px 10px;
     border-radius: 6px;
     font-weight: 700;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 }
 
-/* ПРИОРИТЕТ */
 .task-priority { 
     font-size: 20px; 
     cursor: pointer;
     transition: transform 0.2s;
-    line-height: 1;
-    filter: drop-shadow(0 0 4px currentColor);
 }
 
-.task-priority:hover {
-    transform: scale(1.3);
-}
+.task-priority:hover { transform: scale(1.3); }
 
-/* ПОВТОР */
 .task-repeat { 
     font-size: 12px; 
     color: var(--accent-light);
     background: rgba(59, 130, 246, 0.2);
     padding: 3px 8px;
     border-radius: 6px;
-    font-weight: 600;
-    border: 1px solid var(--accent);
 }
 
-/* ТЕКСТ ЗАДАЧИ */
 .task-text { 
     font-size: 16px; 
-    font-weight: 500;
     word-break: break-word;
     line-height: 1.5;
-    color: var(--text);
 }
 
-/* КНОПКА УДАЛЕНИЯ */
 .task-delete {
     width: 36px; 
     height: 36px;
@@ -368,40 +298,21 @@ body {
     cursor: pointer;
     border-radius: 50%;
     transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
     border: 1px solid var(--danger);
 }
 
 .task-delete:hover {
     background: var(--danger);
     color: white;
-    transform: scale(1.1);
-    box-shadow: 0 0 12px var(--danger);
 }
 
-/* ========== REPEAT CARD ========== */
+/* Repeat Card */
 .repeat-card {
     background: var(--bg-card);
     border-radius: var(--radius);
     padding: 16px;
     box-shadow: var(--shadow);
-    position: relative;
     border: 1px solid var(--border);
-}
-
-.repeat-card:hover {
-    border-color: var(--accent);
-}
-
-.repeat-card::before { 
-    content: '🔄'; 
-    position: absolute; 
-    top: 12px; 
-    right: 12px; 
-    font-size: 18px; 
 }
 
 .repeat-card.inactive { opacity: 0.4; }
@@ -414,13 +325,7 @@ body {
 }
 
 .repeat-priority { font-size: 22px; }
-
-.repeat-text { 
-    font-size: 17px; 
-    font-weight: 600; 
-    flex: 1; 
-    color: var(--text);
-}
+.repeat-text { font-size: 17px; font-weight: 600; flex: 1; }
 
 .repeat-info { 
     display: flex; 
@@ -434,7 +339,6 @@ body {
     padding: 5px 12px;
     background: var(--secondary);
     border-radius: 8px;
-    color: var(--text);
     font-weight: 600;
 }
 
@@ -451,28 +355,10 @@ body {
     transition: all 0.2s;
 }
 
-.btn-toggle { 
-    background: var(--accent); 
-    color: white;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
-}
+.btn-toggle { background: var(--accent); color: white; }
+.btn-remove { background: var(--danger); color: white; }
 
-.btn-toggle:hover { 
-    background: var(--accent-light);
-    box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
-}
-
-.btn-remove { 
-    background: var(--danger); 
-    color: white;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-}
-
-.btn-remove:hover { 
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.6);
-}
-
-/* ========== EMPTY STATE ========== */
+/* Empty State */
 .empty-state { 
     text-align: center; 
     padding: 50px 20px; 
@@ -481,26 +367,10 @@ body {
 }
 
 .empty-state.show { display: block; }
+.empty-icon { font-size: 56px; margin-bottom: 14px; }
+.empty-state p { font-size: 18px; margin-bottom: 6px; font-weight: 600; }
 
-.empty-icon { 
-    font-size: 56px; 
-    margin-bottom: 14px;
-    filter: grayscale(0.3);
-}
-
-.empty-state p { 
-    font-size: 18px; 
-    margin-bottom: 6px;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.empty-state span { 
-    font-size: 14px;
-    color: var(--hint);
-}
-
-/* ========== FAB ========== */
+/* FAB */
 .fab {
     position: fixed;
     bottom: 24px; 
@@ -518,12 +388,9 @@ body {
     transition: all 0.2s;
 }
 
-.fab:hover {
-    transform: scale(1.1);
-    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.8);
-}
+.fab:hover { transform: scale(1.1); }
 
-/* ========== MODAL ========== */
+/* Modal */
 .modal {
     position: fixed;
     inset: 0;
@@ -549,8 +416,6 @@ body {
     transition: transform 0.3s;
     max-height: 90vh;
     overflow-y: auto;
-    border: 1px solid var(--border);
-    border-bottom: none;
 }
 
 .modal.active .modal-content { transform: translateY(0); }
@@ -559,10 +424,7 @@ body {
     border-radius: 20px; 
     margin: 20px; 
     text-align: center;
-    border: 1px solid var(--border);
 }
-
-.modal-large { max-height: 85vh; }
 
 .modal-header { 
     display: flex; 
@@ -571,11 +433,7 @@ body {
     margin-bottom: 20px; 
 }
 
-.modal-header h3 { 
-    font-size: 20px; 
-    font-weight: 700;
-    color: var(--text);
-}
+.modal-header h3 { font-size: 20px; }
 
 .modal-close {
     width: 38px; 
@@ -586,15 +444,9 @@ body {
     font-size: 24px;
     cursor: pointer;
     color: var(--hint);
-    transition: all 0.2s;
 }
 
-.modal-close:hover {
-    background: var(--danger);
-    color: white;
-}
-
-/* ========== FORM ========== */
+/* Form */
 .form-group { margin-bottom: 18px; }
 
 .form-group label { 
@@ -619,14 +471,11 @@ body {
 .form-group input:focus { 
     outline: none; 
     border-color: var(--accent);
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
 }
 
-.form-group input::placeholder {
-    color: var(--hint);
-}
+.form-group input::placeholder { color: var(--hint); }
 
-/* ========== PRIORITY SELECT ========== */
+/* Priority Select */
 .priority-select, .repeat-type-select, .days-select { 
     display: flex; 
     gap: 8px; 
@@ -645,15 +494,9 @@ body {
     transition: all 0.2s;
 }
 
-.priority-btn:hover {
-    border-color: var(--accent);
-    transform: scale(1.05);
-}
-
 .priority-btn.active { 
     border-color: var(--accent); 
     background: rgba(59, 130, 246, 0.2);
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
 
 .priority-select-large { 
@@ -672,18 +515,17 @@ body {
     cursor: pointer;
     text-align: left;
     font-weight: 600;
-    transition: all 0.2s;
     color: var(--text);
     border: 1px solid var(--border);
+    transition: all 0.2s;
 }
 
 .priority-option:hover { 
     background: var(--accent); 
     color: white;
-    border-color: var(--accent);
 }
 
-/* ========== REPEAT TYPE SELECT ========== */
+/* Repeat Type */
 .repeat-type-btn {
     padding: 12px 16px;
     border: 2px solid var(--border);
@@ -692,13 +534,8 @@ body {
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
     color: var(--text-secondary);
-}
-
-.repeat-type-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent-light);
+    transition: all 0.2s;
 }
 
 .repeat-type-btn.active { 
@@ -707,7 +544,7 @@ body {
     color: white; 
 }
 
-/* ========== DAYS SELECT ========== */
+/* Days Select */
 .day-btn {
     flex: 1;
     padding: 14px 6px;
@@ -717,13 +554,8 @@ body {
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
     color: var(--text-secondary);
-}
-
-.day-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent-light);
+    transition: all 0.2s;
 }
 
 .day-btn.active { 
@@ -732,7 +564,7 @@ body {
     color: white; 
 }
 
-/* ========== SUBMIT BUTTON ========== */
+/* Buttons */
 .btn-submit {
     width: 100%;
     padding: 16px;
@@ -745,15 +577,10 @@ body {
     cursor: pointer;
     margin-top: 12px;
     transition: all 0.2s;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
 }
 
-.btn-submit:hover {
-    transform: scale(1.02);
-    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.6);
-}
+.btn-submit:hover { transform: scale(1.02); }
 
-/* ========== MODAL BUTTONS ========== */
 .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
 
 .btn-cancel, .btn-danger {
@@ -764,59 +591,34 @@ body {
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
-.btn-cancel { 
-    background: var(--secondary); 
+.btn-cancel { background: var(--secondary); color: var(--text); }
+.btn-danger { background: var(--danger); color: white; }
+
+#confirm-text { font-size: 18px; padding: 10px 0; font-weight: 600; }
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-card);
     color: var(--text);
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1001;
 }
 
-.btn-cancel:hover {
-    background: var(--border);
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
 }
 
-.btn-danger { 
-    background: var(--danger); 
-    color: white;
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
-}
-
-.btn-danger:hover {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
-}
-
-#confirm-text { 
-    font-size: 18px; 
-    padding: 10px 0;
-    font-weight: 600;
-    color: var(--text);
-}
-
-/* ========== SCROLLBAR ========== */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--secondary);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--hint);
-}
-
-/* ========== GLOW EFFECTS ========== */
-@keyframes glow {
-    0%, 100% { box-shadow: 0 0 5px var(--accent); }
-    50% { box-shadow: 0 0 20px var(--accent); }
-}
-
-.tab.active {
-    animation: glow 2s ease-in-out infinite;
-}
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--danger); }
