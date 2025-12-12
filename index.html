@@ -20,10 +20,12 @@
         </header>
 
         <nav class="nav-tabs">
-            <button class="nav-tab active" data-view="tasks">📋 Задачи</button>
+            <button class="nav-tab active" data-view="tasks">📋 Неделя</button>
+            <button class="nav-tab" data-view="calendar">📆 Дата</button>
             <button class="nav-tab" data-view="repeats">🔄 Повторы</button>
         </nav>
 
+        <!-- ВКЛАДКА: НЕДЕЛЯ -->
         <div class="view active" id="view-tasks">
             <div class="tabs" id="tabs">
                 <button class="tab" data-day="0">Пн</button>
@@ -37,7 +39,7 @@
 
             <div class="day-header">
                 <h2 id="day-title">Понедельник</h2>
-                <button class="btn-icon" id="btn-clear-day">🗑</button>
+                <button class="btn-icon" id="btn-clear-day" title="Очистить день">🗑</button>
             </div>
 
             <div class="tasks-container">
@@ -50,6 +52,28 @@
             </div>
         </div>
 
+        <!-- ВКЛАДКА: ДАТА -->
+        <div class="view" id="view-calendar">
+            <div class="calendar-header">
+                <input type="date" id="calendar-date" class="date-picker">
+            </div>
+            
+            <div class="day-header">
+                <h2 id="calendar-title">Выберите дату</h2>
+                <button class="btn-icon" id="btn-clear-date" title="Очистить">🗑</button>
+            </div>
+
+            <div class="tasks-container">
+                <div class="tasks-list" id="calendar-tasks-list"></div>
+                <div class="empty-state" id="empty-calendar">
+                    <div class="empty-icon">📆</div>
+                    <p>Задач нет</p>
+                    <span>Выберите дату и добавьте задачу</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА: ПОВТОРЫ -->
         <div class="view" id="view-repeats">
             <div class="section-header">
                 <h2>🔄 Повторяющиеся задачи</h2>
@@ -59,7 +83,7 @@
                 <div class="empty-state" id="empty-repeats">
                     <div class="empty-icon">🔄</div>
                     <p>Нет повторов</p>
-                    <span>Создайте шаблон</span>
+                    <span>Создайте повторяющуюся задачу</span>
                 </div>
             </div>
         </div>
@@ -67,7 +91,7 @@
         <button class="fab" id="btn-add">+</button>
     </div>
 
-    <!-- Модалка добавления задачи -->
+    <!-- МОДАЛКА: ДОБАВИТЬ ЗАДАЧУ -->
     <div class="modal" id="modal-add">
         <div class="modal-content">
             <div class="modal-header">
@@ -80,7 +104,7 @@
                     <input type="text" id="task-text" placeholder="Что нужно сделать?" maxlength="100" required>
                 </div>
                 <div class="form-group">
-                    <label>Время</label>
+                    <label>Время (необязательно)</label>
                     <input type="time" id="task-time">
                 </div>
                 <div class="form-group">
@@ -97,7 +121,37 @@
         </div>
     </div>
 
-    <!-- Модалка повторяющейся задачи -->
+    <!-- МОДАЛКА: ДОБАВИТЬ ЗАДАЧУ НА ДАТУ -->
+    <div class="modal" id="modal-add-calendar">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📆 Задача на дату</h3>
+                <button class="modal-close" data-modal="modal-add-calendar">&times;</button>
+            </div>
+            <form id="form-add-calendar-task">
+                <div class="form-group">
+                    <label>Задача</label>
+                    <input type="text" id="calendar-task-text" placeholder="Что нужно сделать?" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Время (необязательно)</label>
+                    <input type="time" id="calendar-task-time">
+                </div>
+                <div class="form-group">
+                    <label>Приоритет</label>
+                    <div class="priority-select" id="calendar-priority-select">
+                        <button type="button" class="priority-btn active" data-priority="0">⚪</button>
+                        <button type="button" class="priority-btn" data-priority="1">🟢</button>
+                        <button type="button" class="priority-btn" data-priority="2">🟡</button>
+                        <button type="button" class="priority-btn" data-priority="3">🔴</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">➕ Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ПОВТОР -->
     <div class="modal" id="modal-repeat">
         <div class="modal-content modal-large">
             <div class="modal-header">
@@ -107,10 +161,10 @@
             <form id="form-add-repeat">
                 <div class="form-group">
                     <label>Задача</label>
-                    <input type="text" id="repeat-text" placeholder="Что нужно делать?" maxlength="100" required>
+                    <input type="text" id="repeat-text" placeholder="Что повторять?" maxlength="100" required>
                 </div>
                 <div class="form-group">
-                    <label>Время</label>
+                    <label>Время (необязательно)</label>
                     <input type="time" id="repeat-time">
                 </div>
                 <div class="form-group">
@@ -128,7 +182,7 @@
                         <button type="button" class="repeat-type-btn active" data-type="daily">Ежедневно</button>
                         <button type="button" class="repeat-type-btn" data-type="weekdays">Будни</button>
                         <button type="button" class="repeat-type-btn" data-type="weekends">Выходные</button>
-                        <button type="button" class="repeat-type-btn" data-type="weekly">Выбрать</button>
+                        <button type="button" class="repeat-type-btn" data-type="weekly">Выбрать дни</button>
                     </div>
                 </div>
                 <div class="form-group" id="days-select-group" style="display: none">
@@ -143,12 +197,12 @@
                         <button type="button" class="day-btn" data-day="6">Вс</button>
                     </div>
                 </div>
-                <button type="submit" class="btn-submit">🔄 Создать</button>
+                <button type="submit" class="btn-submit">🔄 Создать повтор</button>
             </form>
         </div>
     </div>
 
-    <!-- Модалка подтверждения -->
+    <!-- МОДАЛКА: ПОДТВЕРЖДЕНИЕ -->
     <div class="modal" id="modal-confirm">
         <div class="modal-content modal-small">
             <p id="confirm-text">Вы уверены?</p>
@@ -159,7 +213,7 @@
         </div>
     </div>
 
-    <!-- Модалка приоритета -->
+    <!-- МОДАЛКА: ПРИОРИТЕТ -->
     <div class="modal" id="modal-priority">
         <div class="modal-content modal-small">
             <h3>Изменить приоритет</h3>
